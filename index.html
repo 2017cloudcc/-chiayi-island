@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>嘉義市動態島 18 · CHIAYI CITY</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#bceeff;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+canvas{display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.tag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);white-space:nowrap;background:#fff;color:#2c3a3f;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1.5px solid var(--c);box-shadow:0 2px 6px rgba(0,0,0,.12);cursor:pointer;will-change:transform}
+.tag.on{background:var(--c);color:#fff;font-size:13px;z-index:5}
+.tag:hover{z-index:4}
+.tag.lk{background:#f8d7d2;color:#c83e2b}
+.card{background:rgba(252,249,242,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.8);border-radius:20px;box-shadow:0 6px 24px rgba(80,70,50,.15);padding:12px 14px;z-index:20;color:#3d4247}
+.xbtn{width:26px;height:26px;border-radius:50%;border:1px solid #e2dccb;background:#fff;color:#666;font-size:12px;cursor:pointer;line-height:1}
+.cat{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid #e2dccb;background:#fff;color:#4a4a44;cursor:pointer}
+.cat i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.cat.on{background:#f8d7d2;color:#c83e2b;border-color:#f0b9b0}
+.log{bottom:12px}@media(max-width:1279px){.log{bottom:112px}}
+.le{cursor:pointer;line-height:1.45}.le b{color:#c83e2b;font-variant-numeric:tabular-nums}.le u{text-decoration:none;font-weight:600;color:#2c3a3f}
+#seg .pill{border:none;background:transparent}#seg .pill.on{background:#f8d7d2;color:#c83e2b}
+.crow{padding:8px;border-radius:12px;cursor:pointer;border:1px solid transparent}.crow:hover{background:#fff}.crow.cur{background:#fff;border-color:#f0b9b0}
+.dia{display:inline-block;width:11px;height:15px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);flex:none;margin-top:3px}
+.cs{font-size:12px;color:#5b6166;line-height:1.5;margin-top:2px}.pt{font-size:11px;color:#888;margin-left:4px}
+.pill{padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;color:#5b5b55;background:rgba(255,255,255,.7);border:1px solid #e2dccb;cursor:pointer;white-space:nowrap}
+.pill.on{background:#f8d7d2;color:#c83e2b;border-color:#f0b9b0}
+.tm{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:#d9d2c0;outline:none}
+.tm::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#c83e2b;border:2px solid #fff;cursor:pointer}
+.tm::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#c83e2b;border:2px solid #fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="labels" class="absolute inset-0 pointer-events-none"></div>
+<div id="card" class="card absolute left-4 top-4 w-[min(330px,calc(100vw-32px))]" style="margin-top:env(safe-area-inset-top,0px)">
+ <div class="flex items-start justify-between"><div><div class="text-[11px] tracking-[.25em] text-slate-500">CHIAYI CITY · 23.48°N</div><div class="text-2xl font-black text-slate-700">嘉義市動態島 <span style="color:#c83e2b">18</span></div></div><button id="cardX" class="xbtn">∧</button></div>
+ <div id="cardBody"><p class="text-[13px] text-slate-600 mt-2 leading-relaxed">從北門驛的林鐵到蘭潭的水，一格一個地方。點一格，看它和哪些地方連在一起。</p><div id="cats" class="flex flex-wrap gap-1.5 mt-3"></div></div>
+</div>
+<div id="log" class="card log absolute left-4 w-[min(300px,calc(100vw-32px))]">
+ <div class="flex items-center justify-between"><div><div class="text-[11px] tracking-[.2em] text-slate-500">CITY LOG</div><div class="text-sm font-bold text-slate-700">城市日誌</div></div><div class="flex items-center gap-2"><span class="text-[11px] font-bold" style="color:#c83e2b">● LIVE</span><button id="logX" class="xbtn">∧</button></div></div>
+ <div id="logBody"><div id="logList" class="mt-2 overflow-y-auto text-[12.5px] text-slate-600 space-y-1.5" style="max-height:26vh"></div><div class="text-[10.5px] text-slate-400 mt-2">日誌為依時段生成的情境示意，不是即時資料。</div></div>
+</div>
+<div id="seg" class="card absolute top-4 right-4 flex" style="padding:4px;border-radius:999px;margin-top:env(safe-area-inset-top,0px)"><button class="pill on" data-m="pano">全景</button><button class="pill" data-m="policy">政見</button></div>
+<div id="cpanel" class="card absolute right-4 w-[min(330px,calc(100vw-32px))] overflow-y-auto" style="display:none;top:68px;max-height:calc(100vh - 210px)"></div>
+<div class="hidden">
+  <div class="text-2xl font-black text-slate-700 tracking-wide">嘉義市動態島 <span class="text-teal-600">18</span></div>
+  <div class="text-xs text-slate-500 tracking-[.25em]">CHIAYI CITY · 23.48°N</div>
+</div>
+<div id="legend" class="hidden"></div>
+<div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 w-[96vw] max-w-[880px]" style="bottom:calc(12px + env(safe-area-inset-bottom,0px))">
+ <div id="info" class="text-xs text-slate-600 bg-white/60 rounded-full px-3 py-0.5 text-center">拖曳旋轉 · 滾輪縮放 · 點一格開始探索</div>
+ <div class="flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-3xl border border-white/70 shadow-lg" style="background:rgba(250,246,236,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+  <button class="pill on" data-k="labels">▭ 名牌</button>
+  <button class="pill on" data-k="links">☍ 連結線</button>
+  <button class="pill on" data-k="rail">🚆 林鐵</button>
+  <button class="pill" data-k="auto">↻ 自轉</button>
+  <button class="pill" data-k="bird">⊕ 鳥瞰</button>
+  <span class="w-px h-5 bg-slate-300 mx-1"></span>
+  <span id="clock" class="text-sm font-semibold text-slate-700 tabular-nums">10:05</span>
+  <input id="tm" class="tm w-28 sm:w-40" type="range" min="360" max="1380" value="605">
+  <button id="play" class="pill">▶</button>
+ </div>
+</div>
+<script>
+const CATS={rail:['林業鐵道','#d4822a'],food:['舊城滋味','#d15b3e'],park:['公園綠水','#3b8a5a'],art:['藝文再生','#7859b8'],city:['城市發展','#6b6057']};
+const LM=[
+['北門驛','rail',-1,-3],['玉山旅社','rail',-2,-4],['阿里山林業鐵路車庫園區','rail',-4,-3],['檜意森活村','rail',-3,-2],['嘉義製材所','rail',-5,-1],
+['中央噴水池','food',0,0],['文化路夜市','food',2,1],['東市場','food',1,-1],['嘉義城隍廟','food',-1,1],
+['嘉義公園・射日塔','park',3,-3],['蘭潭','park',5,3],['嘉義市立棒球場','park',3,-5],
+['森林之歌','art',4,-1],['嘉義市立美術館','art',-3,1],['嘉義舊監獄','art',-5,2],['嘉義文化創意產業園區','art',-2,3],['交趾陶館','art',-4,0],
+['嘉義車站','city',0,2],['嘉義市政府','city',2,-2],['往高鐵嘉義站','city',3,5],['北港路・後湖工業區','city',-4,4]];
+const CELL=1.5;
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#bceeff');scene.fog=new THREE.Fog('#bceeff',40,80);
+const camera=new THREE.PerspectiveCamera(40,1,.1,200);
+const amb=new THREE.AmbientLight('#fff4e0',.75);scene.add(amb);
+const sun=new THREE.DirectionalLight('#fffaf0',.85);sun.position.set(10,18,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-14,right:14,top:14,bottom:-14,near:1,far:50});sun.shadow.bias=-.0005;scene.add(sun);
+const world=new THREE.Group();scene.add(world);
+const mat=c=>new THREE.MeshLambertMaterial({color:c});
+function H(g){const add=(m,x,y,z)=>{m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;g.add(m);return m};return{
+b:(w,h,d,c,x=0,y=0,z=0)=>add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c)),x,y+h/2,z),
+c:(rt,rb,h,c,x=0,y=0,z=0,s=24)=>add(new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s),mat(c)),x,y+h/2,z),
+r:(rad,h,c,x=0,y=0,z=0)=>{const m=add(new THREE.Mesh(new THREE.ConeGeometry(rad,h,4),mat(c)),x,y+h/2,z);m.rotation.y=Math.PI/4;return m},
+s:(rad,c,x,y,z,sx=1,sy=1,sz=1)=>{const m=add(new THREE.Mesh(new THREE.SphereGeometry(rad,24,16),mat(c)),x,y,z);m.scale.set(sx,sy,sz);return m}}}
+const W='#b98a55',WD='#8a5a30',RED='#c0493a',GR='#8e8a85';
+const MODEL={
+北門驛:h=>{h.b(.9,.5,.6,W);h.r(.7,.35,'#7a4a2a',0,.5,0);h.b(.25,.8,.25,W,.35,.5,.1);h.r(.25,.25,'#7a4a2a',.35,1.3,.1)},
+玉山旅社:h=>{h.b(.8,.5,.6,W);h.b(.7,.4,.5,'#c99c68',0,.5,0);h.r(.6,.3,'#6b3f22',0,.9,0)},
+阿里山林業鐵路車庫園區:h=>{h.b(1.1,.4,.6,'#a8553a');for(let i=-1;i<=1;i++)h.r(.3,.25,'#555',i*.38,.4,0);h.b(1.3,.03,.12,'#444',0,.0,.55);h.b(1.3,.03,.12,'#444',0,0,-.55)},
+檜意森活村:h=>{[[-.4,-.2],[.35,-.25],[0,.35]].forEach(([x,z],i)=>{h.b(.5,.3,.4,i?'#c99c68':W,x,0,z);h.r(.4,.25,'#5e3a20',x,.3,z)})},
+嘉義製材所:h=>{h.b(1,.35,.6,'#9a6a40');h.r(.35,.2,'#555',-.3,.35,0);h.r(.35,.2,'#555',.3,.35,0);h.c(.08,.1,.9,'#8a3a2a',.4,.3,-.2,12)},
+中央噴水池:h=>{h.c(.65,.7,.2,'#e8e0d0');h.c(.55,.55,.22,'#6cc6e8',0,.02,0);h.c(.06,.1,.5,'#fff',0,.2,0,12);h.s(.14,'#bfe9ff',0,.78,0)},
+文化路夜市:h=>{['#e86a4a','#f2b134','#4aa8d8'].forEach((c,i)=>{h.b(.3,.2,.3,'#fff',-.4+i*.4,0,0);h.b(.36,.04,.36,c,-.4+i*.4,.2,0)});h.b(1.2,.02,.12,'#f6d36b',0,.3,.35)},
+東市場:h=>{h.b(1,.3,.7,'#d9b88c');h.b(1.15,.08,.85,'#c9503f',0,.3,0);h.b(.4,.2,.4,'#e8d4aa',0,.38,0)},
+嘉義城隍廟:h=>{h.b(.8,.35,.6,'#c8402f');h.r(.75,.3,'#e0893a',0,.35,0);h.r(.4,.22,'#b0302a',0,.65,0);h.b(.9,.05,.7,'#8a2a20',0,0,0)},
+'嘉義公園・射日塔':h=>{h.c(.28,.34,.2,'#d9d4c8');h.c(.12,.2,1.6,'#f4f0e6',0,.2,0,16);h.c(.28,.2,.12,'#e0893a',0,1.75,0,16);h.c(.02,.12,.25,'#c8402f',0,1.87,0,12)},
+蘭潭:h=>{h.b(1.35,.12,1.35,'#5ab6e6');h.b(1.1,.02,1.1,'#8fd2f2',0,.12,0);h.b(.2,.1,.5,'#b98a55',.5,.12,0)},
+嘉義市立棒球場:h=>{h.c(.65,.65,.08,'#5fae4a');h.c(.4,.4,.1,'#d9a46a',0,.08,0,4).rotation.y=Math.PI/4;const t=new THREE.Mesh(new THREE.TorusGeometry(.62,.13,8,32),mat('#eee'));t.rotation.x=Math.PI/2;t.position.y=.2;t.castShadow=true;h.add&&0;h.__g.add(t)},
+森林之歌:h=>{h.b(.9,.08,.9,'#e6d9b8');h.s(.55,'#c68a4a',0,.08,0,1.15,.9,1.15)},
+嘉義市立美術館:h=>{h.b(1,.45,.5,'#b3523a');h.b(.4,.6,.4,'#c4664a',-.3,0,0);h.b(.9,.05,.4,'#e8e0d0',.1,.45,.05)},
+嘉義舊監獄:h=>{h.b(1.1,.25,.04,'#a8553a',0,0,.5);h.b(1.1,.25,.04,'#a8553a',0,0,-.5);h.b(.04,.25,1,'#a8553a',.55,0,0);h.b(.04,.25,1,'#a8553a',-.55,0,0);h.c(.12,.12,.6,'#c4664a',.5,0,.5,12);h.b(.4,.25,.3,'#8a4a32',0,0,0)},
+嘉義文化創意產業園區:h=>{h.b(1,.3,.5,'#c8b08a');h.r(.35,.2,'#7a5a3a',-.3,.3,0);h.r(.35,.2,'#7a5a3a',.3,.3,0);h.c(.06,.06,.7,'#a8553a',.45,.3,-.3,10)},
+交趾陶館:h=>{h.b(.7,.35,.5,'#e8d4aa');h.r(.55,.25,'#2fa39a',0,.35,0);h.b(.15,.1,.15,'#e0893a',.25,.35,.1)},
+嘉義車站:h=>{h.b(1.2,.35,.5,'#e8d9b8');h.b(.3,.8,.3,'#d8c9a4',0,0,0);h.r(.3,.25,'#a0463a',0,.8,0);h.b(1.3,.05,.6,'#a0463a',0,.35,0)},
+嘉義市政府:h=>{h.b(.6,.9,.5,'#bfc6c8');h.b(.4,.4,.4,'#aab2b4',-.55,0,0);h.b(.4,.4,.4,'#aab2b4',.55,0,0);h.b(.5,.04,.4,'#7a8588',0,.9,0)},
+往高鐵嘉義站:h=>{h.b(1.3,.25,.5,'#f2f2f2');const m=h.c(.3,.3,1.3,'#e8573f',0,.25,0,16);m.rotation.z=Math.PI/2;m.scale.set(.7,1,1);m.position.y=.3;h.b(1.4,.05,.1,'#333',0,0,.45)},
+'北港路・後湖工業區':h=>{h.b(.6,.3,.5,'#9aa0a3',-.3,0,.2);h.b(.5,.4,.4,'#848a8d',.3,0,.2);h.c(.07,.09,.8,'#6b6057',-.4,.3,-.3,10);h.c(.07,.09,.6,'#6b6057',.1,.3,-.35,10)}
+};
+// base
+const base=new THREE.Mesh(new THREE.CylinderGeometry(11,11,1,64),mat('#d9b88c'));base.position.y=-.5;base.receiveShadow=true;world.add(base);
+const rim=new THREE.Mesh(new THREE.CylinderGeometry(11.4,11.8,.8,64),mat('#c29d70'));rim.position.y=-1.3;rim.receiveShadow=true;world.add(rim);
+const keyOf=(x,z)=>x+','+z,taken=new Set(LM.map(l=>keyOf(l[2],l[3])));
+let seed=18;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const tileGeo=new THREE.BoxGeometry(CELL*.96,.16,CELL*.96);
+for(let x=-7;x<=7;x++)for(let z=-7;z<=7;z++){
+  if(Math.hypot(x,z)>6.6)continue;
+  const t=new THREE.Mesh(tileGeo,mat(((x+z)%2+2)%2?'#cbe096':'#f2ebd9'));t.position.set(x*CELL,.08,z*CELL);t.receiveShadow=true;world.add(t);
+  if(taken.has(keyOf(x,z))||rnd()>.3)continue;
+  const g=new THREE.Group(),h=H(g);
+  if(rnd()<.5){h.b(.4,.3,.4,'#fff');h.r(.36,.2,'#e8e4dc',0,.3,0)}else{h.c(.05,.06,.18,'#8a5a30',0,0,0,8);h.r(.3,.5,'#4fa35a',0,.18,0).geometry=new THREE.ConeGeometry(.3,.5,8)}
+  g.position.set(x*CELL+(rnd()-.5)*.3,.16,z*CELL+(rnd()-.5)*.3);g.rotation.y=rnd()*6;world.add(g);
+}
+// landmarks
+const labels=document.getElementById('labels'),items=[];
+LM.forEach(([name,cat,x,z])=>{
+  const g=new THREE.Group();g.__g=g;const h=H(g);h.__g=g;
+  // pad
+  h.c(.8,.8,.05,CATS[cat][1],0,0,0,32).material.color.offsetHSL(0,-.25,.3);
+  MODEL[name](Object.assign(h,{add:g.add.bind(g),__g:g}));
+  g.traverse(o=>o.position.y+=0);
+  g.position.set(x*CELL,.16,z*CELL);g.userData.name=name;world.add(g);
+  const top=new THREE.Box3().setFromObject(g).max.y-g.position.y+.35;
+  const el=document.createElement('div');el.className='tag pointer-events-auto';el.textContent=name;el.style.setProperty('--c',CATS[cat][1]);
+  labels.appendChild(el);
+  const it={name,cat,g,el,top,s:1};items.push(it);
+  el.addEventListener('click',e=>{e.stopPropagation();select(it)});
+});
+// selection ring
+const ring=new THREE.Mesh(new THREE.TorusGeometry(.95,.06,8,40),new THREE.MeshBasicMaterial({color:'#fff'}));ring.rotation.x=Math.PI/2;ring.visible=false;world.add(ring);
+let sel=null;const info=document.getElementById('info');
+function select(it){
+  sel=sel===it?null:it;
+  items.forEach(i=>{i.nb=!!sel&&i!==sel&&NB(sel,i);i.el.classList.toggle('lk',i.nb);i.el.classList.toggle('on',i===sel);i.g.traverse(o=>{if(o.material&&o.material.emissive)o.material.emissive.set(i===sel?0x444444:i.nb?0x221111:0)})});updLinks();
+  ring.visible=!!sel;
+  if(sel){ring.position.set(sel.g.position.x,.3,sel.g.position.z);ring.material.color.set(CATS[sel.cat][1]);info.innerHTML=`<b>${sel.name}</b> <span style="color:${CATS[sel.cat][1]}">● ${CATS[sel.cat][0]}</span>`}
+  else info.textContent='拖曳旋轉 · 滾輪縮放 · 點一格開始探索';
+}
+document.getElementById('legend').innerHTML=Object.values(CATS).map(([n,c])=>`<div><span style="color:${c}">●</span> ${n}</div>`).join('');
+// controls
+const UI={labels:true,links:true,rail:true,auto:false,bird:false};let goElev=null,playing=false;
+// dashed links
+const linkGroup=new THREE.Group();world.add(linkGroup);
+const links=[[0,1],[1,2],[2,3],[3,4],[0,3],[0,7],[5,7],[5,8],[5,6],[5,17],[6,17],[6,12],[7,18],[18,9],[9,11],[9,12],[12,10],[8,13],[13,16],[16,14],[13,15],[15,20],[17,19],[17,15],[6,10],[10,19],[8,3]].map(([i,j])=>{
+  const a=items[i],b=items[j],A=new THREE.Vector3(a.g.position.x,.16+a.top*.55,a.g.position.z),B=new THREE.Vector3(b.g.position.x,.16+b.top*.55,b.g.position.z),d=A.distanceTo(B);
+  const M=A.clone().add(B).multiplyScalar(.5);M.y+=.5+d*.2;
+  const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.QuadraticBezierCurve3(A,M,B).getPoints(40)),new THREE.LineDashedMaterial({color:'#b5472f',dashSize:.22,gapSize:.14,transparent:true,opacity:.8}));
+  ln.computeLineDistances();linkGroup.add(ln);return{a,b,ln}});
+function NB(a,b){return links.some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))}
+function updLinks(){links.forEach(l=>{const on=sel&&(l.a===sel||l.b===sel);l.ln.material.color.set(on?'#e8341c':'#b5472f');l.ln.material.opacity=((l.a.dim||l.b.dim)?.15:1)*(!sel?.8:on?1:.12)})}
+// forestry railway
+const track=new THREE.Group();world.add(track);
+const curve=new THREE.CatmullRomCurve3([[0,3.2],[3,2.6],[5,.8],[5.4,-1.2],[4.8,-3.2],[1.6,-3.9],[-1,-2.2],[-4.8,-3],[-6,-1],[-5.8,1.5],[-3.6,3],[-1.8,4]].map(([x,z])=>new THREE.Vector3(x*CELL,.19,z*CELL)),true,'catmullrom',.5);
+{const N=Math.round(curve.getLength()/.3),sl=new THREE.InstancedMesh(new THREE.BoxGeometry(.5,.05,.11),mat('#8a5a30'),N),dm=new THREE.Object3D(),L=[],R=[];
+ for(let i=0;i<N;i++){const p=curve.getPointAt(i/N),tg=curve.getTangentAt(i/N);dm.position.copy(p);dm.lookAt(p.clone().add(tg));dm.updateMatrix();sl.setMatrixAt(i,dm.matrix)}
+ sl.castShadow=sl.receiveShadow=true;track.add(sl);
+ for(let i=0;i<200;i++){const p=curve.getPointAt(i/200),tg=curve.getTangentAt(i/200),n=new THREE.Vector3(-tg.z,0,tg.x).normalize().multiplyScalar(.15);L.push(p.clone().add(n).setY(.27));R.push(p.clone().sub(n).setY(.27))}
+ [L,R].forEach(a=>{const r=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(a,true),400,.025,5,true),mat('#707070'));r.castShadow=true;track.add(r)})}
+const trainG=new THREE.Group();track.add(trainG);
+{const t=H(trainG);t.b(.32,.25,.6,'#c83e2b',0,.1,0);t.b(.3,.18,.22,'#8a2a20',0,.35,-.18);t.c(.06,.06,.2,'#333',0,.35,.18,10);t.b(.3,.2,.5,'#e0583f',0,.1,-.68);t.b(.3,.2,.5,'#e8a05a',0,.1,-1.25)}
+let trainT=0;
+// city log
+const EV=[['06:10','東市場','攤商正在卸貨，空氣裡飄著雞肉飯的香氣。'],['06:40','嘉義公園・射日塔','晨運的人沿著步道繞塔走了一圈。'],['07:15','嘉義車站','通勤人潮湧出月台，往市區散去。'],['08:20','嘉義舊監獄','導覽員帶著第一批訪客走進舊監獄。'],['08:45','蘭潭','湖面起了薄霧，有人在環湖步道慢跑。'],['09:10','嘉義市立美術館','展間剛開門，磚牆在陽光下泛紅。'],['09:30','嘉義製材所','鋸片舉起的木香飄過了老工廠。'],['09:53','北門驛','林鐵列車從北門驛出發，往山的方向。'],['09:59','檜意森活村','檜木官舍的緣側坐滿了拍照的旅人。'],['10:30','嘉義城隻廟','香煙繞樑，信眾正在進香祈願。'],['11:20','交趨陶館','師傅示範彩釉，孩子們園著看。'],['12:05','中央噴水池','午休的人坐在池邊，水柱在陽光下閃動。'],['13:30','玉山旅社','老字號的門前，旅人正在拖著行李入住。'],['14:20','阿里山林業鐵路車庫園區','老火車頭在車庫裡待命，等下一趨保養。'],['15:40','嘉義文化創意產業園區','市集攜位擺開，手作人正在布置。'],['16:30','森林之歌','巨蛋外的草地上，孩子們追著風箏跑。'],['17:30','嘉義市立棒球場','球員進場熱身，看台漸漸坐滿。'],['18:15','文化路夜市','燈一盞盞亮起，人潮湧向小吃攜。'],['19:20','往高鐵嘉義站','接駁車一班班驶離，載著趨夜車的旅客。'],['20:10','嘉義公園・射日塔','塔身亮起燈，夜色中格外醒目。'],['21:30','北港路・後湖工業區','下班後的工廠區安靜下來，只剩路燈。'],['22:30','嘉義車站','末班車進站，月台漸漸安靜。']];
+const logEl=document.getElementById('logList');let logK='';
+function renderLog(m){const sh=EV.filter(e=>+e[0].slice(0,2)*60+ +e[0].slice(3)<=m).slice(-12).reverse(),k=sh.length+(sh[0]?sh[0][0]:'');if(k===logK)return;logK=k;
+ logEl.innerHTML=sh.length?sh.map(e=>`<div class='le' data-n='${e[1]}'><b>${e[0]}</b> <u>${e[1]}</u>：${e[2]}</div>`).join(''):"<div class='le'>夜色尚未褪去，城市還在沉睡。</div>"}
+logEl.onclick=e=>{const d=e.target.closest('.le');if(!d||!d.dataset.n)return;const it=items.find(i=>i.name===d.dataset.n);if(it&&sel!==it)select(it)};
+function fold(btn,body){btn.onclick=()=>{const h=body.style.display==='none';body.style.display=h?'':'none';btn.textContent=h?'∧':'∨'}}
+fold(document.getElementById('cardX'),document.getElementById('cardBody'));fold(document.getElementById('logX'),document.getElementById('logBody'));
+if(innerWidth<700)document.getElementById('logX').click();
+// category filter
+let catF=null;const catsEl=document.getElementById('cats');
+Object.entries(CATS).forEach(([k,[n,c]])=>{const b=document.createElement('button');b.className='cat';b.innerHTML=`<i style='background:${c}'></i>${n}`;
+ b.onclick=()=>{catF=catF===k?null:k;[...catsEl.children].forEach(x=>x.classList.toggle('on',x===b&&!!catF));items.forEach(i=>i.dim=!!catF&&i.cat!==catF);updLinks()};catsEl.appendChild(b)});
+// mayoral candidates (policy mode)
+const CAND=[
+ {no:1,n:'王義成',p:'無黨籍',c:'#a38f85',lm:'中央噴水池',s:'受訪時表示參選是為了幫助需要幫助的人；目前公開報導中未見具體政見。'},
+ {no:2,n:'陳愷璜',p:'無黨籍・前國立台北藝術大學校長',c:'#e0a458',lm:'嘉義市立美術館',s:'主張打造數位孿生城市，以美學結合科技，發展美學產業與知識經濟。'},
+ {no:3,n:'張啟楷',p:'台灣民眾黨（藍白共推）',c:'#c77dba',lm:'往高鐵嘉義站',s:'主張優先核定高鐵至火車站的輕軌藍線；提出生育獎勵最高 20 萬、提高敬老卡搭計程車補助上限。'},
+ {no:4,n:'王美惠',p:'民主進步黨',c:'#e07f6a',lm:'嘉義車站',s:'公布四大交通政見（高鐵站直達市區、擴大公車與公共自行車、活用鐵路高架化沿線空間、改善停車）；主打全齡照顧，擴大長者居家安全補助。'},
+ {no:5,n:'黃宏成台灣阿成世界偉人財神總統',p:'無黨籍',c:'#8f7fd0',lm:'嘉義市政府',s:'本頁查到的報導中未見具體政見摘要。'}];
+let mode='pano',selC=null;
+const cands=CAND.map(c=>{const it=items.find(i=>i.name===c.lm),m=new THREE.Mesh(new THREE.OctahedronGeometry(.3),new THREE.MeshLambertMaterial({color:c.c,emissive:c.c,emissiveIntensity:.25}));
+ m.castShadow=true;m.visible=false;world.add(m);return Object.assign(c,{m,it,on:true,s:1})});
+const cp=document.getElementById('cpanel');
+cp.innerHTML=`<div class='flex items-baseline justify-between'><div class='font-bold text-slate-700'>嘉義市長候選人</div><div class='text-[11px] text-slate-400'>11/28 投票 · 依號次排列</div></div><div class='text-[11px] text-slate-400 mb-1'>勾選可顯示／隱藏菱形；點列表或菱形查看對應地標</div>`+
+ cands.map((c,i)=>`<div class='crow' data-i='${i}'><div class='flex items-start gap-2'><input type='checkbox' checked data-i='${i}' style='margin-top:4px'><span class='dia' style='background:${c.c}'></span><div><b class='text-[13px]'>${c.no} 號 ${c.n}</b><span class='pt'>${c.p}</span><div class='cs'>${c.s}</div><div class='text-[11px] text-slate-400'>菱形位置：${c.lm}</div></div></div></div>`).join('')+
+ `<div class='text-[10.5px] text-slate-400 leading-relaxed mt-2 pt-2 border-t border-stone-200'>資料整理自公開新聞報導，摘要未必完整，僅供參考。菱形位置僅依政見主題示意，顏色、大小與排列不代表支持度、優劣或預測，也不代表本頁立場。正式資訊請以中選會公報為準。<br>出處：<a target='_blank' rel='noopener' style='text-decoration:underline' href='https://n.yam.com/Article/20261103422133'>報新聞政見對照</a>、<a target='_blank' rel='noopener' style='text-decoration:underline' href='https://udn.com/news/story/124652/9829643'>聯合新聞網（交通政見）</a>、<a target='_blank' rel='noopener' style='text-decoration:underline' href='https://hk.crntt.com/doc/1602/7/5/0/160275089.html'>中評社</a>、<a target='_blank' rel='noopener' style='text-decoration:underline' href='https://news.ltn.com.tw/news/politics/breakingnews/5614868'>自由時報（候選人名單）</a>、<a target='_blank' rel='noopener' style='text-decoration:underline' href='https://udn.com/news/story/124652/9731484'>聯合新聞網（王義成）</a></div>`;
+function hl(){cp.querySelectorAll('.crow').forEach((r,i)=>r.classList.toggle('cur',cands[i]===selC))}
+function pickCand(c){selC=selC===c?null:c;if(selC&&sel!==c.it)select(c.it);hl()}
+cp.onclick=e=>{const i=e.target.dataset.i;if(e.target.type==='checkbox'){cands[i].on=e.target.checked;return}if(e.target.closest('a'))return;const r=e.target.closest('.crow');if(r)pickCand(cands[+r.dataset.i])};
+document.querySelectorAll('#seg [data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;cp.style.display=mode==='policy'?'block':'none';document.querySelectorAll('#seg [data-m]').forEach(x=>x.classList.toggle('on',x===b))});
+function candAnim(){const t=performance.now()/1000;cands.forEach((c,i)=>{c.m.visible=mode==='policy'&&c.on;c.m.position.set(c.it.g.position.x,.16+c.it.top+1+Math.sin(t*2+i)*.08,c.it.g.position.z);c.m.rotation.y=t*1.4+i;c.s+=((c===selC?1.4:1)-c.s)*.15;c.m.scale.set(c.s,c.s*1.5,c.s)})}
+// day / night
+const amb0=new THREE.Color('#fff4e0'),amb1=new THREE.Color('#8fa0d8');
+const SK=[[6,'#ffd2b0'],[8.5,'#bceeff'],[15,'#bceeff'],[17.5,'#ffc79a'],[19,'#5a5f9a'],[21,'#141c3c'],[23,'#0e1530']];
+function skyAt(h){for(let i=0;i<SK.length-1;i++)if(h<=SK[i+1][0])return new THREE.Color(SK[i][1]).lerp(new THREE.Color(SK[i+1][1]),Math.max(0,(h-SK[i][0])/(SK[i+1][0]-SK[i][0])));return new THREE.Color(SK[SK.length-1][1])}
+function setTime(m){const h=m/60,c=skyAt(h),day=Math.min(1,Math.max(0,Math.sin((h-5.5)/14*Math.PI)*1.6)),a=Math.min(1,Math.max(0,(h-6)/13))*Math.PI;
+ scene.background.copy(c);scene.fog.color.copy(c);sun.intensity=.12+.78*day;amb.intensity=.3+.45*day;amb.color.copy(amb1).lerp(amb0,day);sun.position.set(-Math.cos(a)*14,Math.max(3,Math.sin(a)*18),8);
+ document.getElementById('clock').textContent=String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.floor(m%60)).padStart(2,'0');renderLog(m)}
+const tm=document.getElementById('tm');tm.oninput=()=>setTime(+tm.value);setTime(605);
+document.getElementById('play').onclick=e=>{playing=!playing;e.target.textContent=playing?'❚❚':'▶';e.target.classList.toggle('on',playing)};
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;UI[k]=!UI[k];b.classList.toggle('on',UI[k]);if(k==='bird')goElev=UI.bird?1.35:.85});
+function animExtra(){linkGroup.visible=UI.links;track.visible=UI.rail;if(UI.auto&&!down)rotY+=.0015;
+ if(goElev!==null){elev+=(goElev-elev)*.1;if(Math.abs(goElev-elev)<.005)goElev=null}
+ candAnim();trainT=(trainT+.0008)%1;const p=curve.getPointAt(trainT);trainG.position.copy(p);trainG.lookAt(p.clone().add(curve.getTangentAt(trainT)));
+ if(playing){tm.value=+tm.value+1.4;if(+tm.value>=1380)tm.value=360;setTime(+tm.value)}}
+let rotY=-.5,elev=.85,dist=26,tDist=26,down=null,moved=0;
+const cv=renderer.domElement;
+cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};moved=0;cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;moved+=Math.abs(dx)+Math.abs(dy);rotY+=dx*.008;elev=Math.min(1.35,Math.max(.25,elev+dy*.006));down={x:e.clientX,y:e.clientY}});
+cv.addEventListener('pointerup',e=>{if(down&&moved<6){const r=cv.getBoundingClientRect(),ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
+  const ch=mode==='policy'?ray.intersectObjects(cands.filter(c=>c.m.visible).map(c=>c.m))[0]:null;if(ch){pickCand(cands.find(c=>c.m===ch.object));down=null;return}const hit=ray.intersectObjects(items.map(i=>i.g),true)[0];if(hit){let o=hit.object;while(o&&!o.userData.name)o=o.parent;const it=items.find(i=>i.g===o);if(it)select(it)}}down=null});
+cv.addEventListener('wheel',e=>{e.preventDefault();tDist=Math.min(42,Math.max(12,tDist+e.deltaY*.02))},{passive:false});
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+const v=new THREE.Vector3();let T=0;
+(function loop(){requestAnimationFrame(loop);T+=.016;
+  dist+=(tDist-dist)*.12;world.rotation.y=rotY;
+  camera.position.set(0,Math.sin(elev)*dist,Math.cos(elev)*dist);camera.lookAt(0,0,0);
+  items.forEach(i=>{const t=i===sel?1.2:1;i.s+=(t-i.s)*.15;i.g.scale.setScalar(i.s);
+    v.set(i.g.position.x,i.g.position.y+i.top*i.s,i.g.position.z);world.localToWorld(v);v.project(camera);
+    i.el.style.transform=`translate(${(v.x+1)/2*innerWidth}px,${(1-v.y)/2*innerHeight}px) translate(-50%,-100%)`;i.el.style.opacity=i.dim?.25:1;i.el.style.display=(v.z>1||!UI.labels)?'none':'block'});
+  if(sel)ring.scale.setScalar(1+Math.sin(T*4)*.06);
+  animExtra();renderer.render(scene,camera)})();
+</script>
+</body>
+</html>
